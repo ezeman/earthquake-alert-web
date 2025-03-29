@@ -8,4 +8,4 @@ A single-page web application that displays the latest earthquake information on
 - Simple and responsive UI (no framework)
 
 ## Live Demo
-Once deployed via GitHub Pages, the live site will be available here:
+(https://ezeman.github.io/earthquake-alert-web/earthquake_alert_single_file.html)
