@@ -1,134 +1,106 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบแจ้งเตือนแผ่นดินไหว</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <style>
-    body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 0;
-    }
-
-    header {
-        background-color: #333;
-        color: #fff;
-        text-align: center;
-        padding: 1rem 0;
-    }
-
-    main {
-        display: flex;
-        flex-direction: row;
-        height: calc(100vh - 80px);
-    }
-
-    #map {
-        flex: 3;
-        height: 100%;
-    }
-
-    #info {
-        flex: 1;
-        overflow-y: auto;
-        padding: 1rem;
-        background-color: #f4f4f4;
-    }
-
-    #quake-list {
-        list-style-type: none;
-        padding: 0;
-    }
-
-    #quake-list li {
-        margin-bottom: 1rem;
-        padding: 0.5rem;
-        background-color: #fff;
-        border-left: 5px solid #ff0000;
-    }
-
-    @media screen and (max-width: 768px) {
-        main {
-            flex-direction: column;
-        }
-
-        #map {
-            height: 50vh;
-        }
-
-        #info {
-            height: 50vh;
-        }
-    }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>แผ่นดินไหวล่าสุดใกล้คุณ</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    header { background-color: #333; color: #fff; text-align: center; padding: 1rem; }
+    #map { width: 100%; height: 80vh; }
+    footer { padding: 1rem; text-align: center; font-size: 0.8rem; background: #f4f4f4; }
+    @media (max-width: 768px) { #map { height: 50vh; } }
+  </style>
 </head>
 <body>
-    <header>
-        <h1>ระบบแจ้งเตือนแผ่นดินไหว </h1>
-    </header>
-    <main>
-        <div id="map"></div>
-        <div id="info">
-            <h2>แผ่นดินไหวล่าสุด (ย้อนหลัง 7 วัน)</h2>
-            <ul id="quake-list"></ul>
-        </div>
-    </main>
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const end = new Date(); // วันนี้
-        const start = new Date();
-        start.setDate(end.getDate() - 7); // ย้อนหลัง 7 วัน
+  <header>
+    <h1>แผ่นดินไหวล่าสุดใกล้คุณ</h1>
+  </header>
+  <div id="map"></div>
+  <footer>
+    ข้อมูลจาก <a href="https://earthquake.usgs.gov/" target="_blank">USGS</a>
+  </footer>
 
-        const startStr = start.toISOString().split('T')[0];
-        const endStr = end.toISOString().split('T')[0];
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([0, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
 
-        const url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${startStr}&endtime=${endStr}&minmagnitude=2.5&maxradiuskm=1000&latitude=18.7061&longitude=98.9817`;
+    function getColor(magnitude) {
+      return magnitude > 6 ? '#ff0000' :
+             magnitude > 4 ? '#ff6600' :
+             magnitude > 2 ? '#ffcc00' :
+                             '#00ff00';
+    }
 
-        var map = L.map('map').setView([15.8700, 100.9925], 6);
+    function fetchNearbyQuakes(lat, lon) {
+      const end = new Date();
+      const start = new Date();
+      start.setDate(end.getDate() - 7);
+      const startStr = start.toISOString().split('T')[0];
+      const endStr = end.toISOString().split('T')[0];
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
+      const url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&orderby=time&limit=1&starttime=${startStr}&endtime=${endStr}&latitude=${lat}&longitude=${lon}&maxradiuskm=500`;
 
-        function getColor(magnitude) {
-            return magnitude > 6 ? '#ff0000' :
-                   magnitude > 4 ? '#ff6600' :
-                   magnitude > 2 ? '#ffcc00' :
-                                   '#00ff00';
-        }
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          if (data.features.length > 0) {
+            const quake = data.features[0];
+            const [lng, latQ, depth] = quake.geometry.coordinates;
+            const { mag, place, time } = quake.properties;
 
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                var earthquakes = data.features;
-                var quakeList = document.getElementById('quake-list');
+            map.setView([lat, lon], 6);
 
-                earthquakes.forEach(function (quake) {
-                    var coords = quake.geometry.coordinates;
-                    var magnitude = quake.properties.mag;
-                    var place = quake.properties.place;
-                    var time = new Date(quake.properties.time);
+            // วงรัศมี 500 km
+            L.circle([lat, lon], {
+              radius: 500000,
+              color: '#0000ff',
+              fillColor: '#cce5ff',
+              fillOpacity: 0.2
+            }).addTo(map).bindPopup("ตำแหน่งของคุณ (รัศมี 500 กม.)");
 
-                    L.circleMarker([coords[1], coords[0]], {
-                        radius: magnitude * 2,
-                        fillColor: getColor(magnitude),
-                        color: '#000',
-                        weight: 1,
-                        opacity: 1,
-                        fillOpacity: 0.8
-                    }).addTo(map)
-                      .bindPopup(`<strong>สถานที่:</strong> ${place}<br><strong>ขนาด:</strong> ${magnitude}<br><strong>เวลา:</strong> ${time.toLocaleString()}`);
+            // ตำแหน่งของคุณ
+            L.marker([lat, lon]).addTo(map).bindPopup("คุณอยู่ที่นี่").openPopup();
 
-                    var listItem = document.createElement('li');
-                    listItem.innerHTML = `<strong>สถานที่:</strong> ${place}<br><strong>ขนาด:</strong> ${magnitude}<br><strong>เวลา:</strong> ${time.toLocaleString()}`;
-                    quakeList.appendChild(listItem);
-                });
+            // ตำแหน่งแผ่นดินไหว
+            L.circleMarker([latQ, lng], {
+              radius: mag * 2,
+              fillColor: getColor(mag),
+              color: '#000',
+              weight: 1,
+              fillOpacity: 0.8
             })
-            .catch(error => console.error('เกิดข้อผิดพลาดในการดึงข้อมูล:', error));
-    });
-    </script>
+            .addTo(map)
+            .bindPopup(`<h3>แผ่นดินไหวใกล้คุณ</h3>
+              <strong>สถานที่:</strong> ${place}<br>
+              <strong>ขนาด:</strong> ${mag}<br>
+              <strong>ลึก:</strong> ${depth} กม.<br>
+              <strong>เวลา:</strong> ${new Date(time).toLocaleString()}`);
+          } else {
+            alert("ไม่พบข้อมูลแผ่นดินไหวใกล้ตำแหน่งคุณในช่วง 7 วัน");
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alert("ไม่สามารถโหลดข้อมูลแผ่นดินไหวได้");
+        });
+    }
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          fetchNearbyQuakes(latitude, longitude);
+        },
+        () => alert("ไม่สามารถเข้าถึงตำแหน่งของคุณได้")
+      );
+    } else {
+      alert("เบราว์เซอร์ของคุณไม่รองรับ Geolocation");
+    }
+  </script>
 </body>
 </html>
