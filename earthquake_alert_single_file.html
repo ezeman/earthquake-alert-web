@@ -79,7 +79,8 @@
               <strong>สถานที่:</strong> ${place}<br>
               <strong>ขนาด:</strong> ${mag}<br>
               <strong>ลึก:</strong> ${depth} กม.<br>
-              <strong>เวลา:</strong> ${new Date(time).toLocaleString()}`);
+              <strong>เวลา:</strong> ${new Date(time).toLocaleString()}`)
+            .openPopup();
           } else {
             alert("ไม่พบข้อมูลแผ่นดินไหวใกล้ตำแหน่งคุณในช่วง 7 วัน");
           }
