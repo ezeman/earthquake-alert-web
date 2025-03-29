@@ -22,7 +22,7 @@
     main {
         display: flex;
         flex-direction: row;
-        height: 90vh;
+        height: calc(100vh - 80px);
     }
 
     #map {
@@ -48,22 +48,45 @@
         background-color: #fff;
         border-left: 5px solid #ff0000;
     }
+
+    @media screen and (max-width: 768px) {
+        main {
+            flex-direction: column;
+        }
+
+        #map {
+            height: 50vh;
+        }
+
+        #info {
+            height: 50vh;
+        }
+    }
     </style>
 </head>
 <body>
     <header>
-        <h1>ระบบแจ้งเตือนแผ่นดินไหว</h1>
+        <h1>ระบบแจ้งเตือนแผ่นดินไหว </h1>
     </header>
     <main>
         <div id="map"></div>
         <div id="info">
-            <h2>แผ่นดินไหวล่าสุด</h2>
+            <h2>แผ่นดินไหวล่าสุด (ย้อนหลัง 7 วัน)</h2>
             <ul id="quake-list"></ul>
         </div>
     </main>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
+        const end = new Date(); // วันนี้
+        const start = new Date();
+        start.setDate(end.getDate() - 7); // ย้อนหลัง 7 วัน
+
+        const startStr = start.toISOString().split('T')[0];
+        const endStr = end.toISOString().split('T')[0];
+
+        const url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${startStr}&endtime=${endStr}&minmagnitude=2.5&maxradiuskm=1000&latitude=18.7061&longitude=98.9817`;
+
         var map = L.map('map').setView([15.8700, 100.9925], 6);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -77,7 +100,7 @@
                                    '#00ff00';
         }
 
-        fetch('https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2025-03-22&endtime=2025-03-29&minmagnitude=2.5&maxradiuskm=1000&latitude=18.7061&longitude=98.9817')
+        fetch(url)
             .then(response => response.json())
             .then(data => {
                 var earthquakes = data.features;
