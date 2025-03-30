@@ -84,7 +84,7 @@
             const [lng, latQ, depth] = quake.geometry.coordinates;
             const { mag, place, time } = quake.properties;
 
-            map.setView([lat, lon], 7);
+            map.setView([lat, lon], 5);
 
             drawRadius(lat, lon);
 
