@@ -74,7 +74,7 @@
       const startStr = start.toISOString().split('T')[0];
       const endStr = end.toISOString().split('T')[0];
 
-      const url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&orderby=time&limit=1&starttime=${startStr}&endtime=${endStr}&latitude=${lat}&longitude=${lon}&maxradiuskm=500`;
+      const url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&orderby=time&limit=1&starttime=${startStr}&endtime=${endStr}&latitude=${lat}&longitude=${lon}&maxradiuskm=1000`;
 
       fetch(url)
         .then(res => res.json())
