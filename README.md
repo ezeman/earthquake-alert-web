@@ -1,13 +1,50 @@
-# Earthquake Alert Web
+# ระบบเฝ้าระวังและแจ้งเตือนภัยธรรมชาติ (Natural Hazard Alert Web)
 
-A single-page web application that shows the most recent earthquake near you on an interactive map, using Leaflet and the USGS API.
+เว็บ static (ไม่มี backend) สำหรับติดตามภัยธรรมชาติบนแผนที่ แจ้งเตือนบนเบราว์เซอร์และทาง Telegram
+พร้อมหน้าผู้ดูแลสำหรับจัดการพื้นที่เฝ้าระวัง เกณฑ์การเตือน และออกประกาศ ใช้งานบน GitHub Pages ได้ทันที
 
-## Features
-- Finds the latest earthquake within 1,000 km of your location over the past 7 days (USGS GeoJSON)
-- Falls back to Chiang Mai if location access is denied or unavailable
-- Auto-refreshes every 5 minutes
-- Shows distance to the quake, color-coded magnitude, and 100/300/500 km radius rings
-- Simple and responsive UI (no framework)
+## ภัยที่รองรับและแหล่งข้อมูล
+| ภัย | แหล่งข้อมูล |
+| --- | --- |
+| แผ่นดินไหว, สึนามิ (จากธง tsunami ของ USGS) | [USGS](https://earthquake.usgs.gov/fdsnws/event/1/) |
+| พายุ, น้ำท่วม, ภูเขาไฟ, ภัยแล้ง, ไฟป่า | [GDACS](https://www.gdacs.org/) |
+| ไฟป่า, ภูเขาไฟ, พายุ, ดินถล่ม, หมอกควัน | [NASA EONET](https://eonet.gsfc.nasa.gov/) |
+| ฝนตกหนัก, ลมแรง (พยากรณ์ 3 วัน) | [Open-Meteo Forecast](https://open-meteo.com/) |
+| ฝุ่น PM2.5 (ค่าเฉลี่ย 24 ชม.) | [Open-Meteo Air Quality](https://open-meteo.com/en/docs/air-quality-api) |
+
+ระดับการเตือน 4 ระดับ: ข้อมูล · เฝ้าระวัง · เตือนภัย · อันตราย (ปรับเกณฑ์ได้ที่หน้าผู้ดูแล)
+
+> ข้อมูลเป็นข้อมูลประกอบการเฝ้าระวังเท่านั้น ประกาศทางการให้ยึดตามกรมอุตุนิยมวิทยา กรมป้องกันและบรรเทาสาธารณภัย และกรมควบคุมมลพิษ
+
+## หน้าเว็บ
+- **`index.html` หน้าสาธารณะ**: แผนที่ภัยทั้งภูมิภาค, รายการภัยในพื้นที่ที่ติดตาม, ประกาศจากเจ้าหน้าที่,
+  เพิ่มพื้นที่ของตัวเอง (ตำแหน่งปัจจุบันหรือคลิกแผนที่), แจ้งเตือนบนเบราว์เซอร์ + เสียง, ลิงก์ช่อง Telegram
+- **`admin.html` หน้าผู้ดูแล**: ภาพรวมรายพื้นที่, จัดการพื้นที่เฝ้าระวัง, ปรับเกณฑ์, ออก/ยุติประกาศ,
+  ส่งแจ้งเตือน Telegram ทีละรายการหรืออัตโนมัติ, ประวัติการส่ง (ส่งออก CSV)
+
+## การตั้งค่าและการเผยแพร่
+- ค่าที่ทุกคนเห็น (พื้นที่ เกณฑ์ ชื่อระบบ ลิงก์ Telegram) อยู่ใน `data/config.json`
+- ประกาศอยู่ใน `data/announcements.json`
+- หน้าผู้ดูแลแก้ไขเป็น "ฉบับร่าง" ในเบราว์เซอร์ก่อน แล้วกด **เผยแพร่ผ่าน GitHub** (ต้องใส่ fine-grained token
+  ที่มีสิทธิ์ Contents: Read and write เฉพาะ repo นี้) หรือ **ดาวน์โหลดไฟล์** ไป commit เอง
+
+### ตั้งค่า Telegram
+1. สร้างบอทกับ [@BotFather](https://t.me/BotFather) เพื่อรับ Bot Token
+2. สร้างช่อง (Channel) แล้วเพิ่มบอทเป็นผู้ดูแลช่อง
+3. ใส่ Token และ Chat ID (เช่น `@ชื่อช่อง`) ที่แท็บ "ช่องทางแจ้งเตือน" ของหน้าผู้ดูแล แล้วกดส่งข้อความทดสอบ
+4. ใส่ลิงก์ช่อง (`https://t.me/ชื่อช่อง`) ในแท็บ "เกณฑ์ & ตั้งค่า" เพื่อให้ประชาชนกดติดตามได้
+
+## ข้อจำกัดของเว็บ static
+- **ความปลอดภัย:** หน้าผู้ดูแลเปิดได้ทุกคน สิ่งที่ป้องกันคือ Token ซึ่งเก็บไว้ในเบราว์เซอร์ของผู้ดูแลเท่านั้น ห้ามใส่ Token ในไฟล์ใน repo
+- **การแจ้งเตือนต้องเปิดหน้าเว็บค้างไว้:** ทั้งการแจ้งเตือนบนเบราว์เซอร์และการส่ง Telegram อัตโนมัติ ถ้าต้องการให้ทำงานตลอด 24 ชม. ต้องเพิ่มตัวรันฝั่งเซิร์ฟเวอร์ เช่น GitHub Actions แบบตั้งเวลา
+- แหล่งข้อมูลแต่ละแห่งโหลดแยกกัน ถ้าแหล่งใดล่มจะแสดง ✖ ที่แถบสถานะด้านล่าง ส่วนแหล่งอื่นยังทำงานตามปกติ
+
+## รันในเครื่อง
+ใช้ ES modules จึงต้องเปิดผ่านเว็บเซิร์ฟเวอร์ (เปิดไฟล์ตรงๆ ไม่ได้):
+```
+python3 -m http.server 8000
+# แล้วเปิด http://localhost:8000/
+```
 
 ## Live Demo
-(https://ezeman.github.io/earthquake-alert-web/earthquake_alert_single_file.html)
+https://ezeman.github.io/earthquake-alert-web/

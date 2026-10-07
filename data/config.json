@@ -1,0 +1,21 @@
+{
+  "siteName": "ระบบเฝ้าระวังและแจ้งเตือนภัยธรรมชาติ",
+  "refreshMinutes": 5,
+  "telegramChannelUrl": "",
+  "region": { "minLat": -5, "maxLat": 30, "minLon": 85, "maxLon": 120 },
+  "zones": [
+    { "id": "cnx", "name": "เชียงใหม่", "lat": 18.7883, "lon": 98.9853, "radiusKm": 300,
+      "hazards": ["earthquake", "tsunami", "flood", "storm", "rain", "wind", "wildfire", "pm25", "volcano", "landslide", "drought"] },
+    { "id": "bkk", "name": "กรุงเทพมหานคร", "lat": 13.7563, "lon": 100.5018, "radiusKm": 300,
+      "hazards": ["earthquake", "tsunami", "flood", "storm", "rain", "wind", "wildfire", "pm25", "volcano", "landslide", "drought"] },
+    { "id": "pkt", "name": "ภูเก็ต", "lat": 7.8804, "lon": 98.3923, "radiusKm": 500,
+      "hazards": ["earthquake", "tsunami", "flood", "storm", "rain", "wind", "wildfire", "pm25", "volcano", "landslide", "drought"] }
+  ],
+  "thresholds": {
+    "earthquake": { "watch": 4.0, "warning": 5.0, "severe": 6.0 },
+    "tsunamiSevereMagnitude": 7.5,
+    "rainMmPerDay": { "watch": 20, "warning": 35.1, "severe": 90.1 },
+    "windGustKmh": { "watch": 40, "warning": 62, "severe": 89 },
+    "pm25": { "watch": 25.1, "warning": 37.6, "severe": 75.1 }
+  }
+}

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ระบบเฝ้าระวังและแจ้งเตือนภัยธรรมชาติ</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1 id="site-name">ระบบเฝ้าระวังและแจ้งเตือนภัยธรรมชาติ</h1>
+    <div class="actions">
+      <a id="telegram-link" class="btn" hidden target="_blank" rel="noopener">✈️ ติดตามทาง Telegram</a>
+      <button id="notify-btn" type="button">🔔 เปิดการแจ้งเตือน</button>
+      <button id="refresh-btn" type="button" title="โหลดข้อมูลใหม่">⟳</button>
+      <a href="admin.html" title="สำหรับเจ้าหน้าที่">ผู้ดูแลระบบ</a>
+    </div>
+  </header>
+
+  <div class="layout">
+    <section class="panel">
+      <div id="announcements" class="announcements"></div>
+      <nav class="tabs" role="tablist">
+        <button type="button" class="active" data-tab="mine">ภัยในพื้นที่ของฉัน</button>
+        <button type="button" data-tab="all">ภัยทั้งหมด</button>
+        <button type="button" data-tab="zones">พื้นที่ &amp; การตั้งค่า</button>
+      </nav>
+      <div class="panel-body">
+        <div class="tab-content" data-tab="mine">
+          <div id="summary" class="summary"></div>
+          <div class="toolbar">
+            <select id="filter-type-mine" aria-label="กรองประเภทภัย"></select>
+          </div>
+          <ul id="list-mine" class="alert-list"></ul>
+        </div>
+
+        <div class="tab-content" data-tab="all" hidden>
+          <div class="toolbar">
+            <select id="filter-type-all" aria-label="กรองประเภทภัย"></select>
+            <select id="filter-level-all" aria-label="กรองระดับ"></select>
+          </div>
+          <ul id="list-all" class="alert-list"></ul>
+        </div>
+
+        <div class="tab-content" data-tab="zones" hidden>
+          <h3>พื้นที่ที่ติดตาม</h3>
+          <div id="official-zones"></div>
+          <div id="personal-zones"></div>
+          <div class="card">
+            <h3>เพิ่มพื้นที่ของฉัน</h3>
+            <div class="grid-2">
+              <div><label for="pz-name">ชื่อพื้นที่</label><input id="pz-name" placeholder="เช่น บ้าน, ที่ทำงาน" /></div>
+              <div><label for="pz-radius">รัศมี (กม.)</label><input id="pz-radius" type="number" min="10" max="2000" value="200" /></div>
+            </div>
+            <div class="toolbar" style="margin-top:10px">
+              <button type="button" id="pz-locate">📍 ใช้ตำแหน่งปัจจุบัน</button>
+              <button type="button" id="pz-pick">🗺️ เลือกจากแผนที่</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>การแจ้งเตือนบนเบราว์เซอร์</h3>
+            <label for="min-level">แจ้งเตือนเมื่อระดับตั้งแต่</label>
+            <select id="min-level"></select>
+            <label class="inline"><input type="checkbox" id="sound-on" /> เล่นเสียงเตือน</label>
+            <p class="meta" style="font-size:0.85rem;color:var(--muted)">
+              ต้องเปิดหน้านี้ค้างไว้จึงจะได้รับการแจ้งเตือน หากต้องการรับแจ้งเตือนแม้ไม่ได้เปิดเว็บ ให้ติดตามช่อง Telegram
+            </p>
+          </div>
+        </div>
+      </div>
+      <div id="status" class="status-line">กำลังโหลด...</div>
+    </section>
+    <div id="map"></div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>ผู้ดูแลระบบแจ้งเตือนภัย</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>🛡️ ผู้ดูแลระบบ · <span id="site-name">ระบบแจ้งเตือนภัย</span></h1>
+    <div class="actions">
+      <span id="auto-indicator"></span>
+      <button id="refresh-btn" type="button" title="โหลดข้อมูลใหม่">⟳ โหลดใหม่</button>
+      <a href="index.html">หน้าสาธารณะ</a>
+    </div>
+  </header>
+
+  <div id="draft-bar" class="draft-bar" hidden>
+    <span>✏️ มีการแก้ไขที่ยังไม่เผยแพร่: <b id="draft-files"></b></span>
+    <button type="button" class="primary" id="publish-btn">เผยแพร่ผ่าน GitHub</button>
+    <button type="button" id="download-btn">ดาวน์โหลดไฟล์</button>
+    <button type="button" class="danger" id="discard-btn">ยกเลิกการแก้ไข</button>
+  </div>
+
+  <div class="layout">
+    <section class="panel">
+      <nav class="tabs" role="tablist">
+        <button type="button" class="active" data-tab="overview">ภาพรวม</button>
+        <button type="button" data-tab="zones">พื้นที่เฝ้าระวัง</button>
+        <button type="button" data-tab="announce">ออกประกาศ</button>
+        <button type="button" data-tab="thresholds">เกณฑ์ &amp; ตั้งค่า</button>
+        <button type="button" data-tab="channels">ช่องทางแจ้งเตือน</button>
+        <button type="button" data-tab="log">ประวัติ</button>
+      </nav>
+      <div class="panel-body">
+
+        <!-- ภาพรวม -->
+        <div class="tab-content" data-tab="overview">
+          <div id="summary" class="summary"></div>
+          <div class="card">
+            <h3>สถานการณ์รายพื้นที่</h3>
+            <table class="data" id="zone-table"></table>
+          </div>
+          <div class="toolbar">
+            <select id="filter-type" aria-label="กรองประเภทภัย"></select>
+            <select id="filter-level" aria-label="กรองระดับ"></select>
+            <label class="inline"><input type="checkbox" id="only-zones" checked /> เฉพาะในพื้นที่เฝ้าระวัง</label>
+          </div>
+          <ul id="alert-list" class="alert-list"></ul>
+        </div>
+
+        <!-- พื้นที่เฝ้าระวัง -->
+        <div class="tab-content" data-tab="zones" hidden>
+          <div class="toolbar">
+            <button type="button" class="primary" id="add-zone">+ เพิ่มพื้นที่</button>
+          </div>
+          <div id="zone-editor"></div>
+        </div>
+
+        <!-- ออกประกาศ -->
+        <div class="tab-content" data-tab="announce" hidden>
+          <form id="announce-form" class="card">
+            <h3>ประกาศใหม่</h3>
+            <label for="an-title">หัวข้อ</label>
+            <input id="an-title" required style="width:100%" placeholder="เช่น เตือนภัยน้ำท่วมฉับพลัน" />
+            <label for="an-body">รายละเอียด / คำแนะนำ</label>
+            <textarea id="an-body" required placeholder="สิ่งที่ประชาชนควรทราบและปฏิบัติ"></textarea>
+            <div class="grid-2">
+              <div><label for="an-level">ระดับ</label><select id="an-level"></select></div>
+              <div><label for="an-area">พื้นที่ที่เกี่ยวข้อง</label><input id="an-area" placeholder="เช่น อ.เมือง จ.เชียงใหม่" /></div>
+              <div><label for="an-expires">มีผลถึง (เว้นว่างได้)</label><input id="an-expires" type="datetime-local" /></div>
+            </div>
+            <label class="inline"><input type="checkbox" id="an-telegram" checked /> ส่งทาง Telegram ทันที</label>
+            <div class="toolbar" style="margin-top:10px"><button type="submit" class="primary">ออกประกาศ</button></div>
+          </form>
+          <h3>ประกาศทั้งหมด</h3>
+          <div id="announce-list"></div>
+        </div>
+
+        <!-- เกณฑ์ & ตั้งค่า -->
+        <div class="tab-content" data-tab="thresholds" hidden>
+          <form id="settings-form"></form>
+        </div>
+
+        <!-- ช่องทางแจ้งเตือน -->
+        <div class="tab-content" data-tab="channels" hidden>
+          <div class="notice">
+            หน้านี้เป็นเว็บ static ที่ใครก็เปิดได้ แต่ Token ต่างๆ จะเก็บไว้<b>ในเบราว์เซอร์เครื่องนี้เท่านั้น</b>
+            ไม่ถูกส่งขึ้น GitHub ห้ามใส่ Token ในไฟล์ config.json
+          </div>
+          <form id="channel-form">
+            <div class="card">
+              <h3>✈️ Telegram</h3>
+              <label for="tg-token">Bot Token (จาก @BotFather)</label>
+              <input id="tg-token" type="password" autocomplete="off" style="width:100%" />
+              <label for="tg-chat">Chat ID ของช่อง/กลุ่ม (เช่น @my_channel หรือ -100123...)</label>
+              <input id="tg-chat" style="width:100%" />
+              <label for="site-url">ลิงก์เว็บไซต์ (แนบท้ายข้อความ)</label>
+              <input id="site-url" type="url" style="width:100%" />
+              <div class="toolbar" style="margin-top:10px">
+                <button type="button" id="tg-test">ส่งข้อความทดสอบ</button>
+              </div>
+            </div>
+            <div class="card">
+              <h3>🤖 ส่งแจ้งเตือนอัตโนมัติ</h3>
+              <label class="inline"><input type="checkbox" id="auto-dispatch" /> ส่งภัยใหม่ในพื้นที่เฝ้าระวังไปยัง Telegram อัตโนมัติ</label>
+              <label for="dispatch-level">เฉพาะระดับตั้งแต่</label>
+              <select id="dispatch-level"></select>
+              <p style="font-size:0.85rem;color:var(--muted)">
+                ทำงานเฉพาะตอนที่เปิดหน้านี้ค้างไว้ ควรเปิดไว้เพียงเครื่องเดียวเพื่อไม่ให้ส่งซ้ำ
+                ภัยที่มีอยู่แล้วตอนเปิดใช้งานจะไม่ถูกส่งย้อนหลัง
+              </p>
+              <label class="inline"><input type="checkbox" id="admin-browser-notify" /> แจ้งเตือนบนเบราว์เซอร์นี้ด้วย</label>
+            </div>
+            <div class="card">
+              <h3>🐙 GitHub (สำหรับปุ่ม "เผยแพร่")</h3>
+              <div class="grid-2">
+                <div><label for="gh-repo">Repository</label><input id="gh-repo" placeholder="owner/repo" /></div>
+                <div><label for="gh-branch">Branch</label><input id="gh-branch" placeholder="main" /></div>
+              </div>
+              <label for="gh-token">Fine-grained token (สิทธิ์ Contents: Read and write เฉพาะ repo นี้)</label>
+              <input id="gh-token" type="password" autocomplete="off" style="width:100%" />
+            </div>
+            <div class="toolbar"><button type="submit" class="primary">บันทึก</button></div>
+          </form>
+        </div>
+
+        <!-- ประวัติ -->
+        <div class="tab-content" data-tab="log" hidden>
+          <div class="toolbar">
+            <button type="button" id="log-export">ส่งออก CSV</button>
+            <button type="button" class="danger" id="log-clear">ล้างประวัติ</button>
+          </div>
+          <table class="data" id="log-table"></table>
+        </div>
+      </div>
+      <div id="status" class="status-line">กำลังโหลด...</div>
+    </section>
+    <div id="map"></div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script type="module" src="assets/js/admin.js"></script>
+</body>
+</html>
